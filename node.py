@@ -1,0 +1,157 @@
+#from multiprocessing import Pool
+
+class Node( object ) :
+    
+    def __init__( self ) :
+        
+        # graph properies
+        self.parentNodeList = []
+        self.childNodeList  = []
+        
+        # node properties
+        self.nodeSequenceList = []
+        self.nodeType         = "Generic Node"
+        
+        # build informations
+        self.status       = "Not Processed"
+        self.builtMessage = "Not Processed"
+        
+        # callbacks
+        self.start_cb = None
+        self.end_cb   = None
+        
+        self.parms_allowed = {
+            "start_cb" : "callback to invoke when the evaluation of the node starts" , 
+            "end_cb"   : "callback to invoke when the evaluation of the node ends"  
+        }
+        
+        
+    def depends( self , otherNode ) :
+        if self      in otherNode.parentNodeList : otherNode.parentNodeList.remove( self      )
+        if otherNode in self.childNodeList       : self     .childNodeList .remove( otherNode )
+        self.parentNodeList.append( otherNode )
+        otherNode.childNodeList.append( self ) 
+    
+    def name( self ) :
+        return "generic node"
+    
+    def help( self ) :
+        pass
+    
+    def getDependentList( self ) :
+        nodeSequenceList = [ ] 
+        nodeToVisitList  = [ self ]
+        level            = 1
+        
+        # generate the linear sequence of dependencies ( Pixo's style ) 
+        while len( nodeToVisitList ) != 0 :
+            for node in nodeToVisitList[:] :
+                for parent in node.parentNodeList :
+                    if parent in nodeSequenceList : 
+                        nodeSequenceList.remove( parent )
+                    
+                    nodeSequenceList.append( parent ) 
+                    
+                    if parent not in nodeToVisitList : nodeToVisitList.append( parent ) 
+                
+                nodeToVisitList.remove( node ) 
+                
+            level += 1
+            
+        nodeSequenceList = list( reversed( nodeSequenceList ) )
+        
+        return nodeSequenceList
+        
+        
+    def execute( self , **kwargs ) : 
+        
+        self.nodeSequenceList = self.getDependentList()
+        
+        # for each node, compute the dependent sequence list
+        for node in self.nodeSequenceList :
+            node.nodeSequenceList = node.getDependentList() 
+        
+        # start the execution node by node
+        for n in self.nodeSequenceList + [ self ] : 
+            print( "-------------------------" )
+            print( "Building '" + n.nodeType + "' Target : \"" + n.name() + "\""  )
+            
+            # invoke start callback if defined
+            if n.start_cb != None : n.start_cb( n )
+            
+            # evaluate the node
+            n.evaluate( **kwargs )
+            
+            # invoke end callback if defined
+            if n.end_cb != None : n.end_cb( n )
+            
+            if "Error" in n.status : break
+        
+        return
+        
+        
+#       currentLevel = level - 1 
+#       poolSet      = []
+#       currentPool  = []
+#        
+#       for n in self.nodeSequenceList :
+#           print(n)
+#           if n.level == currentLevel :
+##               print("append de " ,  n )
+#               currentPool.append( n )
+#                
+#           else :
+##               print( "currentPool" , currentPool ) 
+##               with Pool(len(currentPool )) as p:
+##                   p.map( Node.evaluate , currentPool )
+#                
+##               print("new pool" , currentPool ) 
+#               poolSet.append( currentPool ) 
+#               currentPool   = [ n ]
+#               currentLevel -= 1
+#        
+#       poolSet.append( currentPool )
+#        
+##       print( poolSet )
+#       print( nodeSequenceList )
+#        
+#        
+#       # supa slow 
+#       for pool in poolSet :
+##           print("start new pool" , pool )
+#           with Pool(len(pool)) as p:
+#               p.map( Node.evaluate , pool )
+#            
+##           print( n , n.level , currentLevel ) 
+        
+    
+    def __repr__( self ) :
+        return self.name() # +":" + str(self.level)
+        
+        
+
+#if __name__ == '__main__':
+#    
+#   nodeA = Node("a")
+#   nodeB = Node("b")
+#   nodeC = Node("c")
+#   nodeD = Node("d")
+#   nodeE = Node("e")
+#   nodeF = Node("f")
+#   nodeG = Node("g")
+#    
+#   nodeB.depends( nodeA ) 
+#   nodeC.depends( nodeA ) 
+#    
+#   nodeE.depends( nodeB ) 
+#   nodeE.depends( nodeC ) 
+#    
+#   nodeD.depends( nodeC ) 
+#    
+#   nodeF.depends( nodeE ) 
+#   nodeF.depends( nodeD ) 
+#    
+#   nodeG.depends( nodeB ) 
+#   nodeG.depends( nodeF ) 
+#    
+#   nodeG.execute()
