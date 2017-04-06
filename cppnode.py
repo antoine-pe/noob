@@ -1,10 +1,6 @@
-import os 
-
-from noob.exceptions import RuntimeException , AssertException
-import os , subprocess , sys ,  hashlib , shlex
+import os , subprocess , sys ,  hashlib , shlex , inspect
+from   noob.exceptions import RuntimeException , AssertException
 import noob.compiler
-import inspect
-
 import noob.node
 import noob.filetools
 
@@ -23,7 +19,7 @@ class _CppNode( noob.node.Node ) :
         noob.node.Node.__init__( self ) 
         
         # properties of this node
-        self.compiler    = noob.compiler.DETECTED_COMPILER  
+        self.compiler    = None
         self.incs        = [] # ex : [ "/my/path/to/inc/dir1" , "/my/path/to/inc/dir2" ]
         self.srcs        = [] # ex : [ "/my/path/to/file.cc"  , "/my/path/to/file2.cc" ]
         self.cc_flags    = [] # ex : [ "-DDEBUG" , "-g" , "-O3" , ... ]
@@ -61,7 +57,14 @@ class _CppNode( noob.node.Node ) :
             print( '  {:<20}'.format(k) , ":" , str( getattr( self , k ) )  ) 
         print()
         
-    def build( self , compiler = None ) :
+    
+    def build( self , compiler = noob.compiler.DETECTED_COMPILER ) :
+        if compiler == None : 
+            displayMsg  = "[ERROR] " + self.nodeType + " : \"" + str( self.targets() ) +"\" build failed"
+            displayMsg += " : Compiler not set"
+            sys.stderr.write( displayMsg + "\n\n" )
+            return
+            
         noob.node.Node.execute( self , compiler = compiler )
     
     def cleanObjects( self ) :
@@ -150,7 +153,7 @@ class _CppNode( noob.node.Node ) :
     def getObjectPath( self , sourcePath ) :
         oFileName  = os.path.basename( sourcePath )
         oFileName  = oFileName.split(".")[0]
-        oFileName += self.compiler["obj_suffix"] 
+        oFileName += noob.compiler.DETECTED_PLATFORM["obj_suffix"] 
         oFilePath  = os.path.join( self.tmp_dir , oFileName )
         return oFilePath
     
@@ -355,7 +358,8 @@ class _CppNode( noob.node.Node ) :
     
     def getCapturedEnvironment( self ) :
         
-        # launch the initialisation script
+        # launch the initialisation script to capture the environment variables
+        # in a separate subprocess to reapply it into futur compilation subprocesses
         capturedEnvironment = {}
         
         if "init_script" in self.compiler.keys() :
@@ -380,8 +384,6 @@ class _CppNode( noob.node.Node ) :
         else :
             capturedEnvironment = os.environ
             
-#       for k,v in capturedEnvironment.items():
-#           print(k," : " ,v )
             
         return capturedEnvironment
         
@@ -545,7 +547,7 @@ class _CppNode( noob.node.Node ) :
         if "compiler" in kwargs.keys() and kwargs["compiler"] != None :
             self.compiler = kwargs["compiler"]
             try :
-                capturedEnvironment = self.getCapturedEnvironment()
+                environment = self.getCapturedEnvironment()
             except RuntimeException as e :
                 return self._onError( "Error during compiler initialisation : " + str(e.msg) )
         
@@ -838,8 +840,8 @@ class ExecutableNode( _CppNode ):
         self.parms_allowed.update( { "exe_name" : "Name of the final executable ( mandatory )" })
         _CppNode._setParameters( self , params )
         
-    def targets( self ):
-        return [ os.path.join( self.dest_dir , self.exe_name + self.compiler["exe_suffix"]) ]
+    def targets( self ) :
+        return [ os.path.join( self.dest_dir , self.exe_name + noob.compiler.DETECTED_PLATFORM["exe_suffix"] ) ]
         
 
 
@@ -865,7 +867,7 @@ class StaticLibraryNode( _CppNode ):
     def targets( self ):
         if   sys.platform in [ "darwin" , "linux" ] : libname = "lib" + self.lib_name
         elif sys.platform == "win32" : libname = self.lib_name
-        libname += self.compiler["static_suffix" ] 
+        libname += noob.compiler.DETECTED_PLATFORM["static_suffix" ] 
         return [ os.path.join( self.dest_dir , libname ) ]
 
 
@@ -892,11 +894,11 @@ class DynamicLibraryNode( _CppNode ):
     def targets( self ):
         if   sys.platform in [ "darwin" , "linux" ] : libname = "lib" + self.lib_name
         elif sys.platform == "win32"                : libname = self.lib_name
-        libname += self.compiler["dynamic_suffix"]             
+        libname += noob.compiler.DETECTED_PLATFORM["dynamic_suffix"]             
         return [ os.path.join( self.dest_dir , libname ) ]
         
     
-    def cleanObjectAndTargets( self ):
+    def cleanObjectAndTargets( self ) :
         # remove temporary files ( objects for instance )
         self.cleanObjects()
 
@@ -905,7 +907,7 @@ class DynamicLibraryNode( _CppNode ):
             noob.filetools.rmFile( target )
         
         # on Windows , remove .exp and .lib files as well
-        if "msvc" in self.compiler["config_name"] :
+        if sys.platform == "win32"  :
             noob.filetools.rmFile( self.targets()[0][:-4] + ".lib" )
             noob.filetools.rmFile( self.targets()[0][:-4] + ".exp" )
             

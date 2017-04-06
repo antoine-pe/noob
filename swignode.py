@@ -152,7 +152,7 @@ class SwigNode( noob.cppnode._CppNode ) :
     def getObjectPath(self , swigIPath ):
         oFilePath  = os.path.basename( swigIPath )
         oFilePath  = oFilePath.split(".")[0]
-        oFilePath += self.compiler["obj_ext"] 
+        oFilePath += noob.compiler.DETECTED_PLATFORM["obj_suffix"] 
         oFilePath  = os.path.join( self.tmp_dir , oFilePath )
         return oFilePath
     
@@ -173,7 +173,7 @@ class SwigNode( noob.cppnode._CppNode ) :
     def getObjectWrapPath( self , swigIPath ):
         owFilePath  = os.path.basename( swigIPath )
         owFilePath  = owFilePath.split(".")[0]
-        owFilePath += "_wrap" + self.compiler["obj_suffix"] 
+        owFilePath += "_wrap" + noob.compiler.DETECTED_PLATFORM["obj_suffix"] 
         owFilePath  = os.path.join( self.tmp_dir , owFilePath )
         return owFilePath
     

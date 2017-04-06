@@ -33,7 +33,7 @@ class Node( object ) :
         otherNode.childNodeList.append( self ) 
     
     def name( self ) :
-        return "generic node"
+        return "Generic Node"
     
     def help( self ) :
         pass
@@ -87,7 +87,6 @@ class Node( object ) :
             
             if "Error" in n.status : break
         
-        return
         
         
 #       currentLevel = level - 1 
@@ -130,28 +129,3 @@ class Node( object ) :
         
         
 
-#if __name__ == '__main__':
-#    
-#   nodeA = Node("a")
-#   nodeB = Node("b")
-#   nodeC = Node("c")
-#   nodeD = Node("d")
-#   nodeE = Node("e")
-#   nodeF = Node("f")
-#   nodeG = Node("g")
-#    
-#   nodeB.depends( nodeA ) 
-#   nodeC.depends( nodeA ) 
-#    
-#   nodeE.depends( nodeB ) 
-#   nodeE.depends( nodeC ) 
-#    
-#   nodeD.depends( nodeC ) 
-#    
-#   nodeF.depends( nodeE ) 
-#   nodeF.depends( nodeD ) 
-#    
-#   nodeG.depends( nodeB ) 
-#   nodeG.depends( nodeF ) 
-#    
-#   nodeG.execute()
