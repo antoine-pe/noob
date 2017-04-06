@@ -1,4 +1,3 @@
-from noob.exceptions import AssertException
 import os
 
 
@@ -84,7 +83,7 @@ def getCachedValue( key ):
 def setCacheValue( key , value  ):
     value = value.hexdigest()
     if type(value) != str:
-        raise AssertException("Cache Type Error : not a string " , str(type(value)) )
+        raise AssertionError("Cache Type Error : not a string " , str(type(value)) )
     setCacheStrValue( key , value )
 
 

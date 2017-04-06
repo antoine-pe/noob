@@ -3,7 +3,6 @@ import noob.cppnode
 import noob.filetools
 from noob.configs import python , swig
 
-from noob.exceptions import AssertException , RuntimeException
 from hashlib import md5
 import os , sys , shutil, inspect , shlex , subprocess
 
@@ -183,7 +182,7 @@ class SwigNode( noob.cppnode._CppNode ) :
         
         # check the command format correcteness
         if not noob.cppnode.checkCmd(cmd , "$(IN)" , "$(OUT)" , "$(FLAGS)") : 
-            raise AssertException("Misformed swig wrap command : missing either $(IN) , $(OUT) or $(FLAGS)")
+            raise AssertionError("Misformed swig wrap command : missing either $(IN) , $(OUT) or $(FLAGS)")
         
         # substitution    
 #       print( "swig flags" , self.swig_flags )
@@ -338,7 +337,7 @@ class SwigNode( noob.cppnode._CppNode ) :
                 print( "pas de regeneration du wrapper swig" )
                     
             # verfier que le wrapper.cpp a ete correctement genere
-            if not os.path.exists( wrapPath ) : raise RuntimeException(self, "Error " + wrapPath + " doesn't exist")
+            if not os.path.exists( wrapPath ) : raise RuntimeError( "Error " + wrapPath + " doesn't exist")
             
             # generer l'objet [...]_wrap.o correspondant a [...]_wrap.cpp si :
             # - le fichier [...]_wrap.cpp vient d'etre regenere
@@ -381,7 +380,7 @@ class SwigNode( noob.cppnode._CppNode ) :
             objs.append( owFilePath )
             
             # verfier que le wrapper.o a ete correctement genere
-            if not os.path.exists( owFilePath ) : raise RuntimeException( self , "Error " + owFilePath + " doesn't exist")
+            if not os.path.exists( owFilePath ) : raise RuntimeError( "Error " + owFilePath + " doesn't exist")
             
             
             
@@ -427,7 +426,7 @@ class SwigNode( noob.cppnode._CppNode ) :
             objs.append( oFilePath )
             
             # verfier que le wrapper.o a ete correctement genere
-            if not os.path.exists( oFilePath ) : raise RuntimeException( self , "Error " + oFilePath + " doesn't exist")
+            if not os.path.exists( oFilePath ) : raise RuntimeError( "Error " + oFilePath + " doesn't exist")
 
 
         # relancer le linking si:
@@ -501,7 +500,7 @@ class SwigNode( noob.cppnode._CppNode ) :
                 
         
         # verfier que le wrapper.cpp a ete correctement genere
-        if not os.path.exists( targetPath ) : raise RuntimeException( "Error " + targetPath + " doesn't exist")
+        if not os.path.exists( targetPath ) : raise RuntimeError( "Error " + targetPath + " doesn't exist")
         
         # creer le fichier __init__.py si besoin dans le repertoire destination
         if not os.path.exists( os.path.join( self.dest_dir , "__init__.py" ) ) : open( os.path.join( self.dest_dir , "__init__.py" ) , 'a').close()

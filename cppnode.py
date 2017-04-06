@@ -1,5 +1,4 @@
 import os , subprocess , sys ,  hashlib , shlex , inspect
-from   noob.exceptions import RuntimeException , AssertException
 import noob.compiler
 import noob.node
 import noob.filetools
@@ -107,7 +106,7 @@ class _CppNode( noob.node.Node ) :
         for k,v in params.items() :
             if k not in list( self.parms_allowed.keys()) + ["calling_path"] + ["nodeType"] :
                 self.displayAllowedParameters()
-                raise AssertException( "\"" + k + "\" parameter is not defined for "+ self.name() ) 
+                raise AssertionError( "\"" + k + "\" parameter is not defined for "+ self.name() ) 
         
         # setting of parameters
         for k,v in params.items() :
@@ -144,7 +143,7 @@ class _CppNode( noob.node.Node ) :
                 externLib[k] = v
                 if k == "srcs": self.srcs += v # add the external sources directly to self.srcs
             else :
-                raise AssertException(  "\"" + k + "\" parameter is not defined for an external library definition" )
+                raise AssertionError(  "\"" + k + "\" parameter is not defined for an external library definition" )
     
         # add to externLibs
         self.extern_libs.append( externLib )
@@ -280,7 +279,7 @@ class _CppNode( noob.node.Node ) :
         else                                                         : cmd  = self.compiler["c_obj_cmd"  ]
             
         if not checkCmd( cmd , "$(IN)" , "$(OUT)" , "$(FLAGS)" ) : 
-            raise AssertException( self , "Misformed obj_cmd : missing either $(IN) , $(OUT) or $(FLAGS)")
+            raise AssertionError( "Misformed obj_cmd : missing either $(IN) , $(OUT) or $(FLAGS)")
         
         
         # split the command string to convert it in a list of options
@@ -341,7 +340,7 @@ class _CppNode( noob.node.Node ) :
         
         # check the command format correctness
         if not checkCmd( cmd , "$(IN)" , "$(OUT)" , "$(FLAGS)" ) : 
-            raise AssertException( "Misformed link command : missing either $(IN) , $(OUT) or $(FLAGS)\n" + cmd)
+            raise AssertionError( "Misformed link command : missing either $(IN) , $(OUT) or $(FLAGS)\n" + cmd)
         
         # split the command string to convert it in a list of options
         # substitute all keywords in the command with the proper values
@@ -372,7 +371,7 @@ class _CppNode( noob.node.Node ) :
             
             # parse stdout
             if stderr : 
-                raise noob.exceptions.RuntimeException( stderr )
+                raise RuntimeError( stderr )
             
             if stdout : 
                 res = stdout.decode( sys.getdefaultencoding() )
@@ -548,8 +547,8 @@ class _CppNode( noob.node.Node ) :
             self.compiler = kwargs["compiler"]
             try :
                 environment = self.getCapturedEnvironment()
-            except RuntimeException as e :
-                return self._onError( "Error during compiler initialisation : " + str(e.msg) )
+            except RuntimeError as e :
+                return self._onError( "Error during compiler initialisation : " + str(e) )
         
         # generate the list of dependent node's properties
         dependentNodeList = [ node for node in self.nodeSequenceList ]
@@ -699,7 +698,7 @@ class _CppNode( noob.node.Node ) :
             
             
             # check if this object exists actually
-            if not os.path.exists( oFilePath ) : raise RuntimeException( "Error " + oFilePath + " doesn't exist")
+            if not os.path.exists( oFilePath ) : raise RuntimeError( "Error " + oFilePath + " doesn't exist")
             
             # add it to the list of object ready to be linked
             objs.append( oFilePath )
