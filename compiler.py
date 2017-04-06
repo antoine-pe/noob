@@ -69,7 +69,7 @@ for msvcVer in [ "msvc2008" , "msvc2012" , "msvc2013" , "msvc2015" ] :
             "dynamic_link_cmd" : "link.exe /NOLOGO /DLL $(IN) /OUT:$(OUT) $(FLAGS)"                 ,
             "static_link_cmd"  : "lib.exe /NOLOGO /OUT:$(OUT) $(IN) $(FLAGS)"                       ,
             "exe_link_cmd"     : "link.exe /NOLOGO $(IN) /OUT:$(OUT) $(FLAGS)"                      ,
-            "incs_prefix"      : "-I"                                                               ,
+            "incs_prefix"      : "-I"                                                              
         }
         
         
@@ -86,7 +86,7 @@ KNOWN_COMPILERS["macOS"]["g++_64"] = {
     "dynamic_link_cmd"         : "g++ $(IN) -o $(OUT) $(FLAGS) -headerpad_max_install_names -arch x86_64 -single_module -dynamiclib",
     "static_link_cmd"          : "ar qcs $(OUT) $(IN) $(FLAGS)"                        , # "ar rcs $(OUT) $(IN) $(FLAGS)",
     "exe_link_cmd"             : "g++ $(IN) -o $(OUT) $(FLAGS)"                        ,
-    "incs_prefix"              : "-I"                                                  ,
+    "incs_prefix"              : "-I"                                                
 }
 
 
@@ -94,14 +94,14 @@ KNOWN_COMPILERS["macOS"]["g++_64"] = {
 ##  Linux compilers
 ## =========================
 KNOWN_COMPILERS["linux"]["g++_64"] = {
-    "machine"                  : "64"                                                  ,
-    "config_name"              : "gcc"                                                 ,
-    "c++_obj_cmd"              : "g++ -c -fPIC $(IN) -o $(OUT) $(FLAGS)"               ,
-    "c_obj_cmd"                : "g++ -c $(IN) -o $(OUT) $(FLAGS)"                     ,
-    "dynamic_link_cmd"         : "g++ -shared $(IN) -o $(OUT) $(FLAGS)"                ,
-    "static_link_cmd"          : "ar qcs $(OUT) $(IN) $(FLAGS)"                        , # "ar rcs $(OUT) $(IN) $(FLAGS)",
-    "exe_link_cmd"             : "g++ -lstdc++ $(IN) -o $(OUT) $(FLAGS)"               ,
-    "incs_prefix"              : "-I"                                                  ,
+    "machine"                  : "64"                                    ,
+    "config_name"              : "gcc"                                   ,
+    "c++_obj_cmd"              : "g++ -c -fPIC $(IN) -o $(OUT) $(FLAGS)" ,
+    "c_obj_cmd"                : "g++ -c $(IN) -o $(OUT) $(FLAGS)"       ,
+    "dynamic_link_cmd"         : "g++ -shared $(IN) -o $(OUT) $(FLAGS)"  ,
+    "static_link_cmd"          : "ar qcs $(OUT) $(IN) $(FLAGS)"          ,
+    "exe_link_cmd"             : "g++ -lstdc++ $(IN) -o $(OUT) $(FLAGS)" ,
+    "incs_prefix"              : "-I"                                    
 }
 
 
@@ -110,39 +110,44 @@ KNOWN_COMPILERS["linux"]["g++_64"] = {
 # if automatic detection fails, make Bud happy ;)
 DETECTED_COMPILER = None
 DETECTED_PLATFORM = None
-
 if sys.platform == "win32" : 
     
     # check if the compiler is 32 or 64 bits
-    process             = subprocess.Popen( "cl.exe" ,  stdout = subprocess.PIPE , stderr = subprocess.PIPE )
-    ( stdout , stderr ) = process.communicate()
-    returnCode          = process.wait()
-    
-    # check architecture used by the current compiler
-    bitness = "undetected"
-    if   "x64"   in str( stderr )                           : bitness = "64" 
-    elif "80x86" in str( stderr ) or "x86" in str( stderr ) : bitness = "32"
-    print( "Windows : " + bitness + "-bits PLATEFORM" )
-    
-    # set the msvc version according to the answer
-    msvcYear = "undetected" 
-    if   "Version 15.00" in str( stderr ) : msvcYear = "2008"
-    elif "Version 17.00" in str( stderr ) : msvcYear = "2012"
-    elif "Version 18.00" in str( stderr ) : msvcYear = "2013"
-    elif "Version 19.00" in str( stderr ) : msvcYear = "2015"
-    print( "Visual Studio " + msvcYear + " " + bitness + "bits" )
-    
-    DETECTED_COMPILER = KNOWN_COMPILERS["windows"]["msvc" + msvcYear + "_" + bitness ]
-    DETECTED_PLATFORM = {
-        "obj_suffix"     : ".obj" ,
-        "dynamic_suffix" : ".dll" ,
-        "static_suffix"  : ".lib" ,
-        "exe_suffix"     : ".exe" 
-    }
-    
+    try :
+        process             = subprocess.Popen( "cl.exe" , stdout = subprocess.PIPE , stderr = subprocess.PIPE )
+        ( stdout , stderr ) = process.communicate()
+        
+        # check architecture used by the current compiler
+        if   "x64" in str( stderr ) : bitness = "64" 
+        elif "x86" in str( stderr ) : bitness = "32" # can also be "80x86" on several msvc versions
+        else                        : raise RuntimeError( "MSVC unknown integer size" )
+        print( "Windows : " + bitness + "-bits Target" )
+        
+        # set the msvc version according to the answer
+        if   "Version 15.00" in str( stderr ) : msvcYear = "2008"
+        elif "Version 17.00" in str( stderr ) : msvcYear = "2012"
+        elif "Version 18.00" in str( stderr ) : msvcYear = "2013"
+        elif "Version 19.00" in str( stderr ) : msvcYear = "2015"
+        else                                  : raise RuntimeError( "MSVC unknown version" )
+        print( "Visual Studio " + msvcYear + " " + bitness + "bits" )
+        
+        DETECTED_COMPILER = KNOWN_COMPILERS["windows"]["msvc" + msvcYear + "_" + bitness ]
+        DETECTED_PLATFORM = {
+            "obj_suffix"     : ".obj" ,
+            "dynamic_suffix" : ".dll" ,
+            "static_suffix"  : ".lib" ,
+            "exe_suffix"     : ".exe" 
+        }
+        
+    except FileNotFoundError as e :
+        sys.stderr.write( "[WARNING] cl.exe not found : " + str(e) + "\n\n" )
+        
+    except RuntimeError as e :
+        sys.stderr.write( "[WARNING] " + str(e) + "\n\n" )
+        
     
 elif sys.platform == "darwin" : 
-    print( "Mac OS : 64-bits PLATEFORM" )
+    print( "Mac OS : 64-bits Target" )
     print( "LLVM   : g++" )
     DETECTED_COMPILER = KNOWN_COMPILERS["macOS"]["g++_64"]
     DETECTED_PLATFORM = {
@@ -154,7 +159,7 @@ elif sys.platform == "darwin" :
 
 
 elif sys.platform == "linux" : 
-    print( "Linux    : 64-bits PLATEFORM" )
+    print( "Linux    : 64-bits Target" )
     print( "Compiler : gcc" )
     DETECTED_COMPILER = KNOWN_COMPILERS["linux"]["g++_64"]
     DETECTED_PLATFORM = {
