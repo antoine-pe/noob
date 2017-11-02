@@ -4,6 +4,8 @@ module aimed to ease the process of compiling c++ libraries or executables. It i
 and MacOS with the main compilers available ( gcc, llvm , msvc > 2008 , ... ). It is mainly 
 oriented to build C++ projects for now, but can be easily extended to do other kind of task. 
 
+Main web page : http://www.noob-builder.org/
+
 A minimal example can be provided as so :
 
 ```
