@@ -57,6 +57,14 @@ class SwigNode( noob.cppnode._CppNode ) :
         noob.filetools.rmDir( self.dest_dir )
 
     
+    def setDisplayModeToConcise( self ) :
+        
+        noob.cppnode._CppNode.setDisplayModeToConcise( self )
+        
+        def swigDisplay( commandList , swigIPath , wrapPath , swigFlags , incsList ) :
+            print("Swiging '" + swigIPath + "' --> '" + wrapPath  )
+        
+        self.swig_display_func = swigDisplay
     
     ## =========================
     ##  Path and commands
@@ -392,8 +400,8 @@ class SwigNode( noob.cppnode._CppNode ) :
             # - le fichier [...].o n'existe pas/plus
             oFilePath = self.getObjectPath ( swigIPath )
             obj_cmd , ccFlags , includes  = self.getObjCommand ( cppPath , oFilePath , dep_prop_list )
-            objKey    = md5( oFilePath + self.name() + "_obj") 
-            objValue  = md5( open(cppPath,'r').read() + " ".join(obj_cmd) ) 
+            objKey    = md5( ( oFilePath + self.name() + "_obj" ).encode("ascii") ) 
+            objValue  = md5( (open(cppPath,'r').read() + " ".join(obj_cmd) ).encode("ascii") ) 
             
             # test
             objGenerated  = force_reeval

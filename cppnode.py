@@ -10,6 +10,30 @@ def checkCmd( cmd , *keywords ):
     return True
 
 
+# examples of custom display functions
+# 
+#def objDisplay( command , sourcePath , oFilePath , ccFlags , incsList ) :
+#   message  = "Compiling '" + sourcePath + "' --> '" + oFilePath + "\n"
+##   message +=  "\n   Includes: " + "\n   Includes: ".join( incsList ) + "\n"
+##   message +=  "\n   cc_flag : " + "\n   cc_flag : ".join( ccFlags  ) + "\n"
+#   print( message ) 
+#
+#
+#def linkDisplay( commandList , targetPath , ldFlags , libs ) :
+#   message  = "Linking '" + targetPath + "'" 
+#   message +=  "\n   ldFlags: " + "\n   ldFlags: ".join( ldFlags ) + "\n"
+#   message +=  "\n   libs   : " + "\n   lib    : ".join( libs    ) + "\n"
+#   print( message ) 
+#    
+#def swigDisplay( commandList , swigIPath , wrapPath , swigFlags , incsList ) :
+#   print("Swiging '" + swigIPath + "' --> '" + wrapPath  )
+#   for inc in incsList : print("   Includes   :" , inc    )
+#   print()
+#   for f in swigFlags  : print("   Swig flags :" , f    )
+#   print()
+    
+    
+    
 # Base class for ExeNode, DynamicLibNode and StaticLibNode
 class _CppNode( noob.node.Node ) :
     
@@ -42,6 +66,8 @@ class _CppNode( noob.node.Node ) :
             "obj_display_func"  : "format function for compiling output messages , ex : def objDisplay( commandList , sourcePath , oFilePath , ccFlags , includes ) " ,
             "link_display_func" : "format function for linking output messages   , ex : def linkDisplay( commandList , targetPath , ldFlags , libs ) " 
         } )
+        
+        self.displayMode = 'normal'
         
         
     def name( self)  :
@@ -94,7 +120,18 @@ class _CppNode( noob.node.Node ) :
         self.cleanObjectAndTargets()
         
         
+    def setDisplayModeToConcise( self ) :
+        self.displayMode = "concise"
+        def objDisplay( command , sourcePath , oFilePath , ccFlags , incsList ) :
+            print( oFilePath  ) 
         
+        def linkDisplay( commandList , targetPath , ldFlags , libs ) :
+#           message  = "Linking '" + " ".join(commandList) + 2*"\n" + targetPath + "'" + 2*"\n" +  str(ldFlags) + 2*"\n" + str(libs) + 2*"\n"
+            message  = "Linking '" + targetPath + "'" 
+            print( message )
+            
+        self.obj_display_func  = objDisplay
+        self.link_display_func = linkDisplay
     
     ## =========================
     ##  Path and commands
@@ -144,7 +181,13 @@ class _CppNode( noob.node.Node ) :
                 if k == "srcs": self.srcs += v # add the external sources directly to self.srcs
             else :
                 raise AssertionError(  "\"" + k + "\" parameter is not defined for an external library definition" )
-    
+        
+        # check if the libs actually exists 
+        if "libs" in params.keys() :
+            for libPath in params["libs"] :
+                if not os.path.exists( libPath ) : 
+                    print( "WARNING : external library : '" + libPath + "' not found" )
+                
         # add to externLibs
         self.extern_libs.append( externLib )
         
@@ -223,7 +266,7 @@ class _CppNode( noob.node.Node ) :
         # add linker flags of this node's external libraries 
         for extLib in self.extern_libs :
             automatic_ldflags += extLib["ld_flags"] 
-            
+        
         return list( set( automatic_ldflags ) )
     
         
@@ -239,7 +282,7 @@ class _CppNode( noob.node.Node ) :
             if node.nodeType in [ "Dynamic Library" , "Static Library" ]:
                 
                 # add inherited libraries
-#               automatic_libs += node.libs
+                #automatic_libs += node.libs
                 
                 # add this library dependency
                 automatic_libs += node.targets()
@@ -247,7 +290,11 @@ class _CppNode( noob.node.Node ) :
                 # add inherited external libraries of this inherited node
                 for extLib in node.extern_libs :
                     automatic_libs += extLib["libs"]
-                    
+        
+        # add external libraries of this node's external libraries 
+        for extLib in self.extern_libs :
+            automatic_libs += extLib["libs"]
+        
         return list( set( automatic_libs ) )
    
    
@@ -535,7 +582,6 @@ class _CppNode( noob.node.Node ) :
                     
 
     def evaluate( self , **kwargs ) :
-        
         # check if all sources exists 
         for src in self.srcs:
             if not os.path.exists( src ):
@@ -563,16 +609,17 @@ class _CppNode( noob.node.Node ) :
             return self._onError( errMsg )
 
         # compile each objects if needed
-        force_reeval = False
         forceRelink  = False
         objs         = []
         for sourcePath in self.srcs:
+            
+            force_reeval = False
             
             # generate the absolute path and the name of the object
             oFilePath = self.getObjectPath( sourcePath )
             if not os.path.isabs( oFilePath ):
                 oFilePath = os.path.realpath( os.path.join( os.getcwd() , oFilePath ) ) 
-
+            
             # generate the object compilation command in a list 
             # ex : [ '-c' , '-pipe' , '-g' , '-gdwarf-2' , '-arch x86_64' , '-w' , '-fPIC' ,'-o' , 'build/hello.o src/hello.cc' ]
             command , ccFlags , includes = self.getObjCommand( sourcePath , oFilePath , dependentNodeList )
@@ -589,7 +636,7 @@ class _CppNode( noob.node.Node ) :
             
             # check if the object doesn't exist 
             if not os.path.exists( oFilePath ) :
-                print( oFilePath + " doesn't exist : eval" )
+                if self.displayMode != "concise" : print( oFilePath + " doesn't exist : eval" )
                 force_reeval = True
             
             
@@ -614,7 +661,8 @@ class _CppNode( noob.node.Node ) :
                     
                 if not force_reeval : print( sourcePath + " command has changed " + msg + ": reeval" )
                 force_reeval = True
-         
+             
+            
             
             # check if an include path has been deleted or modified
             incsKey            = hashlib.md5( ( sourcePath + "_incs_paths" ).encode("ascii") )  # + self.name()
@@ -718,7 +766,7 @@ class _CppNode( noob.node.Node ) :
                 objKey   = hashlib.md5( (dependHeader + sourcePath ).encode("ascii") )
                 objValue = hashlib.md5( open(dependHeader,'rb').read() )
                 noob.filetools.setCacheValue( objKey, objValue ) 
-
+            
         
         # all objects ready to be linked have been compiled from here
         # if at least one object has been recompiled, then forceRelink is True
