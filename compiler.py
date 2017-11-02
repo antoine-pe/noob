@@ -94,7 +94,7 @@ KNOWN_COMPILERS["macOS"]["g++_64"] = {
 ##  Linux compilers
 ## =========================
 KNOWN_COMPILERS["linux"]["g++_64"] = {
-    "machine"                  : "64"                                    ,
+    "bitness"                  : "64"                                    ,
     "config_name"              : "gcc"                                   ,
     "c++_obj_cmd"              : "g++ -c -fPIC $(IN) -o $(OUT) $(FLAGS)" ,
     "c_obj_cmd"                : "g++ -c $(IN) -o $(OUT) $(FLAGS)"       ,
@@ -147,8 +147,13 @@ if sys.platform == "win32" :
         
     
 elif sys.platform == "darwin" : 
+    process             = subprocess.Popen( "which g++" , stdout = subprocess.PIPE , stderr = subprocess.PIPE , shell=True )
+    ( stdout , stderr ) = process.communicate()
+    
     print( "Mac OS : 64-bits Target" )
     print( "LLVM   : g++" )
+    print( "path   :" , stdout[:-1].decode() )
+    
     DETECTED_COMPILER = KNOWN_COMPILERS["macOS"]["g++_64"]
     DETECTED_PLATFORM = {
         "obj_suffix"     : ".o"     ,  
