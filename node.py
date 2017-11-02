@@ -1,4 +1,5 @@
 #from multiprocessing import Pool
+import sys
 
 class Node( object ) :
     
@@ -85,7 +86,7 @@ class Node( object ) :
             # invoke end callback if defined
             if n.end_cb != None : n.end_cb( n )
             
-            if "Error" in n.status : break
+            if "Error" in n.status : sys.exit(-1)
         
         
         
