@@ -61,15 +61,16 @@ for msvcVer in [ "msvc2008" , "msvc2012" , "msvc2013" , "msvc2015" ] :
     for bitness in [ "32" , "64" ] :
         
         KNOWN_COMPILERS["windows"][ msvcVer + "_" + bitness ] = {
-            "bitness"          : bitness                                                            ,
-            "config_name"      : msvcVer + "_" + bitness                                            ,
-            "init_script"      : [ "C:/Program Files (x86)/Microsoft Visual Studio " + versMap[msvcVer]["vsVersion"] + "/VC/vcvarsall.bat", "x86" if bitness == "32" else "x64" ]  ,
-            "c++_obj_cmd"      : "cl.exe /c $(IN) -Fo$(OUT) $(FLAGS) " + " ".join( common_compiler_windows_flags + [ versMap[msvcVer]["msvcDefine"] ] ) + " /TP" , 
-            "c_obj_cmd"        : "cl.exe /c $(IN) -Fo$(OUT) $(FLAGS) " + " ".join( common_compiler_windows_flags + [ versMap[msvcVer]["msvcDefine"] ] ) + " /TC" , 
-            "dynamic_link_cmd" : "link.exe /NOLOGO /DLL $(IN) /OUT:$(OUT) $(FLAGS)"                 ,
-            "static_link_cmd"  : "lib.exe /NOLOGO /OUT:$(OUT) $(IN) $(FLAGS)"                       ,
-            "exe_link_cmd"     : "link.exe /NOLOGO $(IN) /OUT:$(OUT) $(FLAGS)"                      ,
-            "incs_prefix"      : "-I"                                                              
+            "bitness"            : bitness                                                            ,
+            "config_name"        : msvcVer + "_" + bitness                                            ,
+            "init_script"        : [ "C:/Program Files (x86)/Microsoft Visual Studio " + versMap[msvcVer]["vsVersion"] + "/VC/vcvarsall.bat", "x86" if bitness == "32" else "x64" ]  ,
+            "c++_obj_cmd"        : "cl.exe /c $(IN) -Fo$(OUT) $(FLAGS) " + " ".join( common_compiler_windows_flags + [ versMap[msvcVer]["msvcDefine"] ] ) + " /TP" , 
+            "c_obj_cmd"          : "cl.exe /c $(IN) -Fo$(OUT) $(FLAGS) " + " ".join( common_compiler_windows_flags + [ versMap[msvcVer]["msvcDefine"] ] ) + " /TC" , 
+            "dynamic_link_cmd"   : "link.exe /NOLOGO /DLL $(IN) /OUT:$(OUT) $(FLAGS)"                 ,
+            "static_link_cmd"    : "lib.exe /NOLOGO /OUT:$(OUT) $(IN) $(FLAGS)"                       ,
+            "exe_link_cmd"       : "link.exe /NOLOGO $(IN) /OUT:$(OUT) $(FLAGS)"                      ,
+            "incs_prefix"        : "-I"                                                               ,                                                         
+            "incs_system_prefix" : "-I"       # no -isystem on Windows                                                     
         }
         
         
@@ -86,7 +87,8 @@ KNOWN_COMPILERS["macOS"]["g++_64"] = {
     "dynamic_link_cmd"         : "g++ $(IN) -o $(OUT) $(FLAGS) -headerpad_max_install_names -arch x86_64 -single_module -dynamiclib",
     "static_link_cmd"          : "ar qcs $(OUT) $(IN) $(FLAGS)"                        , # "ar rcs $(OUT) $(IN) $(FLAGS)",
     "exe_link_cmd"             : "g++ $(IN) -o $(OUT) $(FLAGS)"                        ,
-    "incs_prefix"              : "-I"                                                
+    "incs_prefix"              : "-iquote"                                             ,
+    "incs_system_prefix"       : "-isystem"                                                
 }
 
 
@@ -101,7 +103,8 @@ KNOWN_COMPILERS["linux"]["g++_64"] = {
     "dynamic_link_cmd"         : "g++ -shared $(IN) -o $(OUT) $(FLAGS)"  ,
     "static_link_cmd"          : "ar qcs $(OUT) $(IN) $(FLAGS)"          ,
     "exe_link_cmd"             : "g++ -lstdc++ $(IN) -o $(OUT) $(FLAGS)" ,
-    "incs_prefix"              : "-I"                                    
+    "incs_prefix"              : "-iquote"                               ,    
+    "incs_system_prefix"       : "-isystem"                                    
 }
 
 

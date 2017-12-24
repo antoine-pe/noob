@@ -75,7 +75,7 @@ class Node( object ) :
         # start the execution node by node
         for n in self.nodeSequenceList + [ self ] : 
             print( "-------------------------" )
-            print( "Building '" + n.nodeType + "' Target : \"" + n.name() + "\""  )
+            print( "Building '" + n.nodeType + "' , Target : \"" + n.name() + "\""  )
             
             # invoke start callback if defined
             if n.start_cb != None : n.start_cb( n )
@@ -87,42 +87,6 @@ class Node( object ) :
             if n.end_cb != None : n.end_cb( n )
             
             if "Error" in n.status : sys.exit(-1)
-        
-        
-        
-#       currentLevel = level - 1 
-#       poolSet      = []
-#       currentPool  = []
-#        
-#       for n in self.nodeSequenceList :
-#           print(n)
-#           if n.level == currentLevel :
-##               print("append de " ,  n )
-#               currentPool.append( n )
-#                
-#           else :
-##               print( "currentPool" , currentPool ) 
-##               with Pool(len(currentPool )) as p:
-##                   p.map( Node.evaluate , currentPool )
-#                
-##               print("new pool" , currentPool ) 
-#               poolSet.append( currentPool ) 
-#               currentPool   = [ n ]
-#               currentLevel -= 1
-#        
-#       poolSet.append( currentPool )
-#        
-##       print( poolSet )
-#       print( nodeSequenceList )
-#        
-#        
-#       # supa slow 
-#       for pool in poolSet :
-##           print("start new pool" , pool )
-#           with Pool(len(pool)) as p:
-#               p.map( Node.evaluate , pool )
-#            
-##           print( n , n.level , currentLevel ) 
         
     
     def __repr__( self ) :
